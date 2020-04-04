@@ -1,0 +1,9 @@
+# API for test : 
+https://us-central1-socialape-daf78.cloudfunctions.net/getScreams
+
+
+# to test locally use :
+firebase server => you can test your changes locally 
+
+# to test: 
+firebase deploy
