@@ -1,3 +1,6 @@
+
+functions/serviceAccount.json
+functions/util/config.js
 # Logs
 logs
 *.log

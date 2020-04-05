@@ -94,7 +94,9 @@ exports.commentOnScream = (req, res)=>{
         .then(doc=>{
             // 404  indicate that the browser was able to communicate with a given server, but the server could not find what was requested
             if(!doc.exists) return res.status(404).json({ error : 'Scream not found'});
-
+            return doc.ref.update({ commentCount : doc.data().commentCount + 1 });
+        })
+        .then(()=>{
             return db.collection('comments').add(newComment)
         })
         .then(()=>{
@@ -105,4 +107,119 @@ exports.commentOnScream = (req, res)=>{
             res.status(500).json({error : 'Something went wrong'});   
         })
 
+}
+
+exports.likeScream = (req,res)=>{
+    // check if the scream already exist so the user can like it 
+    // check if he already liked it or not 
+
+    const likeDocument = db.collection('likes')
+                            .where('userHandle','==',req.user.handle)
+                            .where('screamId', '==', req.params.screamId).limit(1);
+
+    const screamDocument = db.doc(`/screams/${req.params.screamId}`);
+
+    let screamData = {};
+
+    screamDocument
+    .get()
+    .then(doc=>{
+        if(doc.exists){
+            screamData = doc.data();
+            screamData.screamId = doc.id;
+            return likeDocument.get();
+        }else{
+            return res.status(404).json({ error :  'Scream not found'});
+        }
+    })
+    .then(data=>{
+        if(data.empty){
+            return db.collection('likes').add({
+                screamId : req.params.screamId,
+                userHandle : req.user.handle
+            })
+            .then(()=>{
+                screamData.likeCount++;
+                return screamDocument.update({likeCount : screamData.likeCount});
+            })
+            .then(()=>{
+                res.json(screamData); 
+            })
+        }else{
+            return res.status(400).json({ error :'Scream already liked'});
+        }
+    })
+    .catch(error=>{
+        console.log(error);
+        res.status(500).json({ error : error.code });
+        
+    })
+                    
+}
+
+exports.unlikeScream = (req , res)=>{
+    const likeDocument = db.collection('likes')
+                            .where('userHandle','==',req.user.handle)
+                            .where('screamId', '==', req.params.screamId).limit(1);
+
+    const screamDocument = db.doc(`/screams/${req.params.screamId}`);
+
+    let screamData = {};
+
+    screamDocument
+    .get()
+    .then(doc=>{
+        if(doc.exists){
+            screamData = doc.data();
+            screamData.screamId = doc.id;
+            return likeDocument.get();
+        }else{
+            return res.status(404).json({ error :  'Scream not found'});
+        }
+    })
+    .then(data=>{
+        if(data.empty){
+            return res.status(400).json({ error :'Scream not liked'});
+        }else{
+            return db.doc(`/likes/${data.docs[0].data().id}`).delete()
+                        .then(()=>{
+                            screamData.likeCount--;
+                            return screamDocument.update({ likeCount : screamData.likeCount }); 
+                        })
+                        .then(()=>{
+                            res.json(screamData);
+                        })
+                        
+        }
+    })
+    .catch(error=>{
+        console.log(error);
+        res.status(500).json({ error : error.code });
+        
+    })
+}
+
+exports.deleteScream = (req, res)=>{
+    const document = db.doc(`/screams/${req.params.screamId}`);
+
+    document.get()
+        .then(doc=>{
+            if(!doc.exists){
+                // no scream to delete 
+                return res.status(404).json({error : 'Scream not found'});
+            }
+            // just the owner of the scream can delete it 
+            if(doc.data().userHandle !== req.user.handle){
+                return res.status(403).json({ error : 'Unauthorized' });
+            }else{
+                return document.delete();
+            }
+        })
+        .then(()=>{
+            res.json({message : 'Scream deleted succefully'});
+        })
+        .catch(error=>{
+            console.log(error);
+            return res.status(500).json({ error : error.code });
+        })
 }
