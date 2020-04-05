@@ -41,3 +41,4 @@ app.get('/user', FBAuth , getAuthenticatedUser);
 
 // it's good convension to use http://baseurl.com/api/getScream and not http://baseurl.com/getScream
 exports.api = functions.https.onRequest(app);
+
