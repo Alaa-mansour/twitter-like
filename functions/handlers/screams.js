@@ -14,7 +14,8 @@ exports.getScreams = (req,res)=>{
                 userHandle : doc.data().userHandle,
                 createdAt :doc.data().createdAt,
                 commentCount : doc.data().commentCount,
-                likeCount : doc.data().likeCount
+                likeCount : doc.data().likeCount,
+                userImage : doc.data().userImage
             });
         })
         return res.json(screams);
@@ -23,10 +24,10 @@ exports.getScreams = (req,res)=>{
         console.log("error in getScreams",err);
         return res.status(500).json({error : err.code});
     });
-} 
+}
 
 exports.getScream = (req,res)=>{
-    let screamData = {}; 
+    let screamData = {};
     db.doc(`/screams/${req.params.screamId}`).get()
         .then(doc=>{
             if(!doc.exists){
@@ -64,11 +65,11 @@ exports.createScream = (req,res)=>{
         likeCount : 0,
         commentCount : 0
     };
-    
+
     db.collection('screams')
         .add(newScream)
         .then(doc=>{
-            const resScream = newScream; 
+            const resScream = newScream;
             resScream.screamId = doc.id;
             return res.json(resScream);
         })
@@ -80,7 +81,7 @@ exports.createScream = (req,res)=>{
 
 exports.commentOnScream = (req, res)=>{
     if(req.body.body.trim() == '' ) return res.status(400).json({error : 'must not be empty'});
-    
+
     const newComment = {
         body : req.body.body,
         createdAt : new Date().toISOString(),
@@ -89,7 +90,7 @@ exports.commentOnScream = (req, res)=>{
         userImage : req.user.imageUrl
     };
 
-    // confirm if the scream still there to comment on it 
+    // confirm if the scream still there to comment on it
     db.doc(`/screams/${req.params.screamId}`).get()
         .then(doc=>{
             // 404  indicate that the browser was able to communicate with a given server, but the server could not find what was requested
@@ -104,14 +105,14 @@ exports.commentOnScream = (req, res)=>{
         })
         .catch(error=>{
             console.log(error);
-            res.status(500).json({error : 'Something went wrong'});   
+            res.status(500).json({error : 'Something went wrong'});
         })
 
 }
 
 exports.likeScream = (req,res)=>{
-    // check if the scream already exist so the user can like it 
-    // check if he already liked it or not 
+    // check if the scream already exist so the user can like it
+    // check if he already liked it or not
 
     const likeDocument = db.collection('likes')
                             .where('userHandle','==',req.user.handle)
@@ -143,7 +144,7 @@ exports.likeScream = (req,res)=>{
                 return screamDocument.update({likeCount : screamData.likeCount});
             })
             .then(()=>{
-                res.json(screamData); 
+                res.json(screamData);
             })
         }else{
             return res.status(400).json({ error :'Scream already liked'});
@@ -152,9 +153,9 @@ exports.likeScream = (req,res)=>{
     .catch(error=>{
         console.log(error);
         res.status(500).json({ error : error.code });
-        
+
     })
-                    
+
 }
 
 exports.unlikeScream = (req , res)=>{
@@ -184,18 +185,18 @@ exports.unlikeScream = (req , res)=>{
             return db.doc(`/likes/${data.docs[0].id}`).delete()
                         .then(()=>{
                             screamData.likeCount--;
-                            return screamDocument.update({ likeCount : screamData.likeCount }); 
+                            return screamDocument.update({ likeCount : screamData.likeCount });
                         })
                         .then(()=>{
                             res.json(screamData);
                         })
-                        
+
         }
     })
     .catch(error=>{
         console.log(error);
         res.status(500).json({ error : error.code });
-        
+
     })
 }
 
@@ -205,10 +206,10 @@ exports.deleteScream = (req, res)=>{
     document.get()
         .then(doc=>{
             if(!doc.exists){
-                // no scream to delete 
+                // no scream to delete
                 return res.status(404).json({error : 'Scream not found'});
             }
-            // just the owner of the scream can delete it 
+            // just the owner of the scream can delete it
             if(doc.data().userHandle !== req.user.handle){
                 return res.status(403).json({ error : 'Unauthorized' });
             }else{
