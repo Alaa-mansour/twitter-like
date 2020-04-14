@@ -12,9 +12,9 @@ exports.signup = (req,res)=>{
         confirmPassword : req.body.confirmPassword,
         handle : req.body.handle
     };
-    
-    //destructoring 
-    const { valid , errors} = validateSignupData(newUser);   
+
+    //destructoring
+    const { valid , errors} = validateSignupData(newUser);
 
     if(!valid) return res.status(400).json(errors);
 
@@ -37,7 +37,7 @@ exports.signup = (req,res)=>{
                       .then(tokenResponse=>{
                           token = tokenResponse;
                           console.log("@@ THE TOKEN @@ ", token);
-                          
+
                           const userCredentials= {
                               handle: newUser.handle,
                               email : newUser.email,
@@ -61,7 +61,7 @@ exports.signup = (req,res)=>{
                       })
           }
       })
-            
+
 }
 
 exports.login = (req,res)=>{
@@ -69,8 +69,8 @@ exports.login = (req,res)=>{
         email : req.body.email,
         password : req.body.password
     }
-    //destructoring 
-    const { valid , errors} = validateLoginData(user);   
+    //destructoring
+    const { valid , errors} = validateLoginData(user);
 
     if(!valid) return res.status(400).json(errors);
 
@@ -84,12 +84,12 @@ exports.login = (req,res)=>{
             })
             .catch(error=>{
                 console.error(error);
-                if(error.code ==  "auth/wrong-password"){
+                if(error.code ==  "auth/wrong-password" || error.code ==  "auth/user-not-found"){
                     //403 unathorized request
                     return res.status(403).json({ general : "wrong credentials, please try again"})
                 }else{
                     return res.status(500).json({error: error.code});
-                }  
+                }
             })
 
 
@@ -156,8 +156,8 @@ exports.uploadImage = (req,res)=>{
         const imageExtension = filename.split('.')[filename.split('.').length -1];
         //34234234.png
         imageFileName = `${Math.round(Math.random()*10000000000)}.${imageExtension}`;
-        
-        //tmpdir cuz it's not actual server but a cloud function 
+
+        //tmpdir cuz it's not actual server but a cloud function
         const filePath = path.join(os.tmpdir(),imageFileName);
         imageToBeUploaded = { filePath , mimetype};
         //to creat the file
